@@ -1,0 +1,66 @@
+<html>
+  <head>
+    <title>Spreadsheet Example in sig-html</title>
+  </head>
+  <body>
+    <link rel="stylesheet" href="style.css"/>
+    <div class="app"></div>
+    <script type="module">
+import {html, render, Signal} from './index.js';
+const rootNode = document.querySelector('.app');
+
+const signals = {};
+
+const address = (x,y) => `${x},${y}`;
+
+const b1 = signals[address(2, 1)] = new Signal('');
+const a2 = signals[address(1, 2)] = new Signal('');
+const B1 = () => b1.value | 0;
+const A2 = () => a2.value | 0;
+
+signals[address(1, 1)] = (new Signal()).computed(value => B1() + A2(), [b1, a2]);
+
+const evaluate = ({target:{dataset:{x,y}, value}}) => (signals[address(x, y)].value = value);
+
+const alpha = i => i > 0 ? String.fromCharCode('A'.charCodeAt(0) + i - 1) : '';
+
+const row = (x, content) => `<tr class="row" data-x="${x}">${content}</tr>`;
+
+const input = (x, y, signal) => html `<input data-x="${x}" data-y="${y}" type="text" @input="${evaluate}" .value="${signal}"/>`;
+
+const isBorder = x => x === 0;
+
+const borderClass = x => isBorder ? ' border' : '';
+
+const borderOrInput = (x, y, signal) => isBorder(x) ? y : input(x, y, signal);
+
+const cell = (x, y, signal) => `<td class="cell${borderClass(x)}">${borderOrInput(x, y, signal)}</td>`;
+
+const header = x => `<th class="header">${alpha(x)}</th>`;
+
+const table = (maxX, maxY) => {
+    const rows = ['<table><thead>'];
+    const cells = [];
+    for(let x = 0; x <= maxX; x++) {
+	cells.push(header(x));
+    }
+    rows.push(cells.join(''));
+    rows.push('</thead><tbody>');
+    for(let y = 1; y <= maxY; y++) {
+	const cells = [];
+	for(let x = 0; x <= maxX; x++) {
+	    const signal = signals[address(x, y)] || (signals[address(x, y)] = new Signal(''));
+	    cells.push(cell(x, y, signal));
+	}
+	rows.push(row(y, cells.join('')));
+    }
+    rows.push('</tbody></table>');
+    return rows.join('\n');
+};
+
+const spreadsheetExample = table(5, 5);
+
+render(rootNode, spreadsheetExample);
+    </script>
+  </body>
+</html>

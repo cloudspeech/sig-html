@@ -1,0 +1,25 @@
+{
+  "name": "sig-html",
+  "version": "0.0.1",
+  "description": "sig-html is a micro framework for web apps based on plain or computed signals + lit-html template notation.",
+  "main": "index.min.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "bun build index.js",
+    "start": "bun --hot run ./server.js"
+  },
+  "keywords": [
+    "framework",
+    "web",
+    "javascript",
+    "signals",
+    "lit-html",
+    "templates"
+  ],
+  "author": "Markus Walther",
+  "license": "MIT",
+  "dependencies": {
+    "serve-static-bun": "^0.5.3",
+    "terser": "^5.19.4"
+  }
+}

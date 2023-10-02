@@ -1,0 +1,27 @@
+<html>
+  <head>
+    <title>Counter Example in sig-html</title>
+  </head>
+  <body>
+    <link rel="stylesheet" href="style.css"/>
+    <div class="app"></div>
+    <script type="module">
+      import {html, render, Signal} from './index.min.js';
+      const rootNode = document.querySelector('.app');
+      const counter = new Signal(0);
+      const derivedSignal = counter.computed(value => value % 2 ? 'odd' : 'even');
+      const disabled = new Signal(false);
+      const disable = e => (disabled.value = !disabled.value);
+      const counterExample = html `<h1 class="${derivedSignal}" title="${counter}">${document.title}</h1>
+      <div class="container">
+	<button @click="${e => counter.value++}" ?disabled="${disabled}">+</button>
+	<span class="value">${counter}</span>
+	<button @click="${e => counter.value--}" ?disabled="${disabled}">-</button>
+	<span>Value is <em>${derivedSignal}</em></span>
+	<hr>
+	<label>Disabled<input type="checkbox" @click="${disable}"> (buttons are disabled: <em>${disabled}</em>)</label>
+      </div>`;
+      render(rootNode, counterExample);
+    </script>
+  </body>
+</html>
