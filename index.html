@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="style.css"/>
     <div class="app"></div>
     <script type="module">
-      import {html, render, Signal} from './index.min.js';
+      import {html, render, Signal} from './index.js';
       const rootNode = document.querySelector('.app');
       const counter = new Signal(0);
       const derivedSignal = counter.computed(value => value % 2 ? 'odd' : 'even');
