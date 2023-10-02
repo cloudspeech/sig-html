@@ -11,6 +11,12 @@ This is alpha-quality software and as such not ready for production.
 ```
 This is a subset of the [full lit-html syntax](https://lit.dev/docs/templates/expressions/).
 
+## Known restrictions:
+- Signals are the only mechanism provided for reactivity
+- any literal variables must span the entire attribute value or text content in which it occurs, i.e. no 'some ${...} other text or template variable' is allowed (for now)
+- no HTML validation or sanitizing whatsoever
+- no careful memory or performance optimizations (yet)
+
 ## How to try it out
 
 1. Install [bun](https://bun.sh)
