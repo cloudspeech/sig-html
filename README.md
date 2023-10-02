@@ -13,7 +13,7 @@ This is a subset of the [full lit-html syntax](https://lit.dev/docs/templates/ex
 
 ## Known restrictions:
 - Signals are the only mechanism provided for reactivity
-- any literal variables must span the entire attribute value or text content in which it occurs, i.e. no 'some ${...} other text or template variable' is allowed (for now)
+- any template literal variables must span the _entire_ attribute value or text content in which it occurs, i.e. no `some ${aTemplateVariable} followed by other text or template variable` is allowed (for now)
 - no HTML validation or sanitizing whatsoever
 - no careful memory or performance optimizations (yet)
 
