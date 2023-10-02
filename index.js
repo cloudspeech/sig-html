@@ -136,9 +136,9 @@ let handleVariables = (domNode, plugs2Values) => {
 	    let signal = isSignal(value) && value;
 	    value = handleSignal(domNode, value);
 	    // and - for text - assign its initial text content
-	    if (typeof value === 'string')
+	    if (typeof value === 'string' || typeof value === 'number')
 		domNode[TEXTCONTENT] = value;
-	    else if (parent && signal && 'value' in signal) { // for signals containing a piece of DOM...
+	    else if (parent && signal && 'value' in signal && value instanceof Node) { // for signals containing a piece of DOM...
 		// remove text node
 		domNode.remove();
 		// set its initial DOM content on the parent of the text node
