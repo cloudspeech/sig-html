@@ -31,3 +31,20 @@ button {
     font-size: 1.5rem;
     color: blue;
 }
+
+.event-input {
+    width: 80%;
+}
+
+.event-line:nth-child(odd) {
+    background-color: #eee
+}
+
+.event-line:nth-child(even) {
+    color: #eee;
+    background-color: #111;
+}
+
+.event-line::marker {
+    color: #000;
+}

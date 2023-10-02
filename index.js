@@ -130,11 +130,22 @@ let handleVariables = (domNode, plugs2Values) => {
 	// yes, try to see whether it contains a plug
 	let value = plugs2Values[domNode[TEXTCONTENT]];
 	// it does?
-	if (value !== undefined) {
+	if (value != undefined) {
 	    // yes, see if it is a signal, too
+	    let parent = domNode.parentNode;
+	    let signal = isSignal(value) && value;
 	    value = handleSignal(domNode, value);
-	    // and assign its initial text content
-	    domNode[TEXTCONTENT] = value;
+	    // and - for text - assign its initial text content
+	    if (typeof value === 'string')
+		domNode[TEXTCONTENT] = value;
+	    else if (parent && signal && 'value' in signal) { // for signals containing a piece of DOM...
+		// remove text node
+		domNode.remove();
+		// set its initial DOM content on the parent of the text node
+		parent.appendChild(value);
+		// and update the signal to point to the parent, so later render(signal,...) works as expected
+		signal.value = parent;
+	    }
 	}
     }
 
@@ -173,11 +184,12 @@ export let html = (fragments, ...values) => {
 };
 
 // render plugged string-template HTML under a root node
-export let render = (rootNode, pluggedHTML) => {
+export let render = (rootNode, pluggedHTML = '', domTree) => {
+    let aSignal = isSignal(rootNode);
+    domTree = domTree ?? aSignal ? rootNode.value : d.createDocumentFragment();
     // extract a list of child nodes from parsed, string-template-variables-plugged HTML text
     let domHTML = extractNodes(parse(pluggedHTML));
     // create a corresponding DOM tree, reparenting the child nodes under a new document fragment
-    let domTree = d.createDocumentFragment();
     for(let domNode of domHTML) {
 	domTree[APPENDCHILD](domNode);
     }
@@ -187,7 +199,7 @@ export let render = (rootNode, pluggedHTML) => {
 	handleVariables(treeWalker.currentNode, plugs2Values);
     }
     // finally, append the DOM tree under the root node provided
-    rootNode[APPENDCHILD](domTree);
+    return aSignal ? domTree : rootNode ? rootNode[APPENDCHILD](domTree) : domTree;
 };
 
 // provide plain and computed signals

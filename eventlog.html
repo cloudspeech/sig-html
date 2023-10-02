@@ -1,0 +1,20 @@
+<html>
+  <head>
+    <title>Event Log Example in sig-html</title>
+  </head>
+  <body>
+    <link rel="stylesheet" href="style.css"/>
+    <div class="app"></div>
+    <script type="module">
+      import {html, render, Signal} from './index.js';
+      const app = document.querySelector('.app');
+      const emptyDOM = render(null);
+      const events = new Signal(emptyDOM);
+      const handleEvents = ({data:event}) => event && render(events, html `<li class="event-line">At <span class="time">${(new Date()).toLocaleTimeString()}</span>, you typed "<span class="event">${event}</span>".</li>`);
+      const appHTML = html `<h1 title="${document.title}">${document.title}</h1>
+      <input class="event-input" type="text" placeholder="type here to generate input events..." @input="${handleEvents}"/>
+      <ol class="log">${events}</ol>`;
+      render(app, appHTML);
+    </script>
+  </body>
+</html>
