@@ -5,7 +5,7 @@
   "main": "index.min.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "bun build index.js",
+    "build": "bun run terser ./index.js --module --compress ecma=2022,passes=2 --mangle > dist/index.min.js && ls -lh dist/index.min.js",
     "start": "bun --hot run ./server.js"
   },
   "keywords": [
