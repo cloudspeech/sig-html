@@ -149,7 +149,7 @@ let handleVariables = (domNode, plugs2Values) => {
       else if (parent && signal && "value" in signal && value instanceof Node) {
         // for signals containing a piece of DOM...
         // remove text node
-        domNode.remove();
+        domNode[REMOVE]();
         // set its initial DOM content on the parent of the text node
         parent.appendChild(value);
         // and update the signal to point to the parent, so later render(signal,...) works as expected
