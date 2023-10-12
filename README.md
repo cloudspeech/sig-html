@@ -6,6 +6,32 @@
 ## Status
 This is alpha-quality software and as such not ready for production.
 
+## Counter Example
+
+```js
+<html>
+  <head>
+    <title>Counter Example in sig-html</title>
+  </head>
+  <body>
+    <link rel="stylesheet" href="style.css"/>
+    <div class="app"></div>
+    <script type="module">
+      import {html, render, Signal} from './index.js';
+      const container = document.querySelector('.app');
+      const counter = new Signal(0);
+      const app = html `<h1 title="${counter}">${document.title}</h1>
+      <div class="container">
+	<button @click="${e => counter.value++}">+</button>
+	<span class="value">${counter}</span>
+	<button @click="${e => counter.value--}">-</button>
+      </div>`;
+      render(container, app);
+    </script>
+  </body>
+</html>
+```
+
 ## Supported lit-html syntax
 
 ```html

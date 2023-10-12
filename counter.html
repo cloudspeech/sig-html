@@ -7,15 +7,15 @@
     <div class="app"></div>
     <script type="module">
       import {html, render, Signal} from './index.js';
-      const app = document.querySelector('.app');
+      const container = document.querySelector('.app');
       const counter = new Signal(0);
-      const appHTML = html `<h1 title="${counter}">${document.title}</h1>
+      const app = html `<h1 title="${counter}">${document.title}</h1>
       <div class="container">
 	<button @click="${e => counter.value++}">+</button>
 	<span class="value">${counter}</span>
 	<button @click="${e => counter.value--}">-</button>
       </div>`;
-      render(app, appHTML);
+      render(container, app);
     </script>
   </body>
 </html>
