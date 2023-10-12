@@ -1,7 +1,7 @@
 # sig-html
  sig-html is a micro framework for web apps based on plain or computed signals + lit-html template syntax.
 
- How micro? **980** bytes, when maximally Brotli-compressed!
+ How micro? **943** bytes, when maximally Brotli-compressed!
 
 ## Status
 This is alpha-quality software and as such not ready for production.

@@ -24,8 +24,8 @@ let GETATTRIBUTE = GET + ATTRIBUTE;
 let GETATTRIBUTENAMES = GETATTRIBUTE + "Names";
 let APPENDCHILD = "appendChild";
 
-let DEFAULT_EFFECT = (domNode, value) => [() => (domNode[TEXTCONTENT] = value)]; // set the text content of an assumed Text node to a value
-let DEFAULT_REACTION = (identity) => identity; // the identity value transform
+let DEFAULT_EFFECT = (domNode, value) => (domNode[TEXTCONTENT] = value); // set the text content of an assumed Text node to a value
+let DEFAULT_REACTION = identity => identity; // the identity value transform
 let LIT_HTML_SPECIALS = ".?@";
 
 // module globals
@@ -35,56 +35,48 @@ let parser = new DOMParser();
 let d = document;
 
 // helper functions
-let parse = (htmlText) => {
+let parse = htmlText => {
   return parser.parseFromString(htmlText, "text/html"); // returns document tree corresponding to <html><head></head><body>child nodes</body></html>
 };
 
-let extractNodes = (dom) => dom?.all[2].childNodes; // extract the <html>, then the <body>, then the children under it
+let extractNodes = dom => dom?.all[2].childNodes; // extract the <html>, then the <body>, then the children under it
 
-let isText = (domNode) => domNode.nodeType === 3; // is it a Text node?
+let isText = domNode => domNode.nodeType === 3; // is it a Text node?
 
-let isFunction = (f) => typeof f === "function";
+let isFunction = f => typeof f === "function";
 
-// determine an attribute's type; returns a triplet of [sanitizedAttribute, attributesFirstCharacter, isLitHTMLSpecialAttribute]
-let attributeType = (attribute = "") => {
-  let firstCharacter = attribute.charAt(0);
+// determine an attribute's type; returns a pair of [sanitizedAttribute, indexOfSpecialCharacterOrZero]
+// Note: missing/undefined attribute initialized to 'impossible' string "\0" with which search for special character will fail with -1 index
+let attributeType = (attribute = "\0") => {
+  let firstCharacter = attribute[0];
   // lit-html-style prefixed attribute?
-  let isLitHTMLSpecial = LIT_HTML_SPECIALS.includes(firstCharacter);
+  let litHTMLSpecialIndex = LIT_HTML_SPECIALS.indexOf(firstCharacter) + 1;
   return [
-    isLitHTMLSpecial
-      ? /* yes, strip first character */ attribute.slice(1)
-      : /* no, return as-is */ attribute,
-    firstCharacter,
-    isLitHTMLSpecial,
+    litHTMLSpecialIndex ? /* yes, strip first character */ attribute.slice(1) : /* no, return as-is */ attribute,
+    litHTMLSpecialIndex
   ];
 };
 
-let deriveEffect = ([attribute, firstCharacter]) => {
+let deriveEffect =
+  ([attribute, litHTMLSpecialIndex]) =>
   // given a DOM node and a value:
-  return (domNode, value) => {
-    // dispatch on the attribute's first character (which signifies in lit-html notation what the attribute stands for)
-    switch (firstCharacter) {
-      case "." /* a property */:
-        domNode[attribute] = value; // effect: set property to value
-        break;
-      case "?" /* a Boolean attribute */:
-        domNode[(value ? SET : REMOVE) + ATTRIBUTE](attribute, ""); // effect: add or remove Boolean attribute
-        break;
-      case "@" /* an event handler */:
-        let { listener, options } = isFunction(value)
-          ? { listener: value, options: false }
-          : value;
-        domNode.addEventListener(attribute, listener, options); // effect: attach event listener for event named in value
-        break;
-      default: /* a Text node or a plain, undecorated attribute */
-        if (isText(domNode)) {
-          domNode[TEXTCONTENT] = value; // effect: set text content to value
-        } else {
-          domNode[SET + ATTRIBUTE](attribute, value); // effect: set attribute to value
-        }
-    }
-  };
-};
+  (domNode, value) =>
+    [
+      /* a Text node or a plain, undecorated attribute */
+      () =>
+        isText(domNode)
+          ? DEFAULT_EFFECT(domNode, value) // effect: set text content to value
+          : domNode[SET + ATTRIBUTE](attribute, value), // effect: set attribute to value
+      /* a .property */
+      () => (domNode[attribute] = value), // effect: set property to value
+      /* a ?Boolean attribute */
+      () => domNode[(value ? SET : REMOVE) + ATTRIBUTE](attribute, ""), // effect: add or remove Boolean attribute
+      /* an @event handler */
+      () => {
+        let { listener, options } = isFunction(value) ? { listener: value, options: false } : value;
+        domNode.addEventListener(attribute, listener, options);
+      } // effect: attach event listener for event named in value
+    ][litHTMLSpecialIndex]();
 
 let handleEffect = (attribute, domNode, value) => {
   // try to get initial value from attribute value
@@ -95,9 +87,7 @@ let handleEffect = (attribute, domNode, value) => {
   let type = attributeType(attribute);
 
   // is it a lit-html-annotated attribute?
-  let notPlainAttribute = type[2];
-
-  if (notPlainAttribute) {
+  if (type[1]) {
     // yes, remove it (it will replaced by the effect it induces on the DOM node)
     domNode[REMOVE + ATTRIBUTE](attribute);
   }
@@ -112,9 +102,9 @@ let handleEffect = (attribute, domNode, value) => {
   return [deriveEffect(type), handleSignal(domNode, value, attribute)];
 };
 
-let isSignal = (signal) => signal instanceof Signal;
+let isSignal = signal => signal instanceof Signal;
 
-let handleSignal = (domNode, value, attribute = "") => {
+let handleSignal = (domNode, value, attribute) => {
   // value represents a straightforward signal?
   if (isSignal(value)) {
     // yes, subscribe DOM node and get initial value of the signal
@@ -132,7 +122,7 @@ let handleSignal = (domNode, value, attribute = "") => {
   return value;
 };
 
-let handleVariables = (domNode, plugs2Values) => {
+let handleVariables = domNode => {
   // Text node?
   if (isText(domNode)) {
     // yes, try to see whether it contains a plug
@@ -144,14 +134,13 @@ let handleVariables = (domNode, plugs2Values) => {
       let signal = isSignal(value) && value;
       value = handleSignal(domNode, value);
       // and - for text - assign its initial text content
-      if (/string|number|boolean/.test(typeof value))
-        domNode[TEXTCONTENT] = value;
+      if (/string|number|boolean/.test(typeof value)) DEFAULT_EFFECT(domNode, value);
       else if (parent && signal && "value" in signal && value instanceof Node) {
         // for signals containing a piece of DOM...
         // remove text node
         domNode[REMOVE]();
         // set its initial DOM content on the parent of the text node
-        parent.appendChild(value);
+        parent[APPENDCHILD](value);
         // and update the signal to point to the parent, so later render(signal,...) works as expected
         signal.value = parent;
       }
@@ -203,20 +192,12 @@ export let render = (rootNode, pluggedHTML = "", domTree) => {
     domTree[APPENDCHILD](domNode);
   }
   // walk the entire DOM tree under the document fragment...
-  for (
-    let treeWalker = d.createTreeWalker(domTree, 133, null);
-    treeWalker.nextNode();
-
-  ) {
+  for (let treeWalker = d.createTreeWalker(domTree, 5); treeWalker.nextNode(); ) {
     // ... handling its string template variables-turned-unique-plugs
-    handleVariables(treeWalker.currentNode, plugs2Values);
+    handleVariables(treeWalker.currentNode);
   }
   // finally, append the DOM tree under the root node provided
-  return aSignal
-    ? domTree
-    : rootNode
-    ? rootNode[APPENDCHILD](domTree)
-    : domTree;
+  return aSignal ? domTree : rootNode ? rootNode[APPENDCHILD](domTree) : domTree;
 };
 
 // provide plain and computed signals
@@ -253,8 +234,7 @@ export class Signal {
         domNode.value = undefined;
         continue;
       }
-      for (let effect of this.#effects[GET](domNode) ||
-        DEFAULT_EFFECT(domNode, newValue)) {
+      for (let effect of this.#effects[GET](domNode)) {
         effect(newValue, domNode);
       }
     }
@@ -262,13 +242,13 @@ export class Signal {
 
   // define a derived signal, which applies a value transform a.k.a. reaction whenever a signal value changes
   computed(reaction, when = []) {
-    when.forEach((signal) => signal.subscribe(this));
+    when.forEach(signal => signal[SUBSCRIBE](this));
     return [
       this,
       (domNode, attribute) => {
         this[SUBSCRIBE](domNode, attribute, reaction);
         return reaction;
-      },
+      }
     ];
   }
 }
